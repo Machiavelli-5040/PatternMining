@@ -116,13 +116,27 @@ def spmf_output_to_dataframe(spmf_output_path: str | Path):
 
 def get_sequences(
     dataset_subfolder_mode_path: str | Path,
-) -> list[np.ndarray]:
+) -> dict[str, np.ndarray]:
     """
     Returns a list of numpy arrays, on for each sequence of the given dataset,
     subfolder, and mode.
     """
     mode_path = Path(dataset_subfolder_mode_path)
-    sequences = []
+    sequences = {}
     for file_path in sorted(mode_path.glob("*.csv")):
-        sequences.append(pd.read_csv(file_path)["syllable"].to_numpy())
+        sequences[file_path] = pd.read_csv(file_path)["syllable"].to_numpy()
     return sequences
+
+
+def get_durations(
+    dataset_subfolder_mode_path: str | Path,
+) -> dict[str, np.ndarray]:
+    """
+    Returns a list of numpy arrays, on for each sequence of the given dataset,
+    subfolder, and mode.
+    """
+    mode_path = Path(dataset_subfolder_mode_path)
+    durations = {}
+    for file_path in sorted(mode_path.glob("*.csv")):
+        durations[file_path] = pd.read_csv(file_path)["duration"].to_numpy()
+    return durations

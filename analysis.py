@@ -1,6 +1,7 @@
 from itertools import combinations
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -11,6 +12,11 @@ def get_pattern_presence_idx(
     pattern: list[int] | np.ndarray,
     max_gap: int,
 ) -> np.ndarray:
+    """
+    Returns a 2D numpy array listing all sequence indices where the pattern has
+    been detected.
+    """
+
     p = len(pattern)
     sequence = np.array(sequence)
     starts = np.where(sequence == pattern[0])[0]
@@ -216,3 +222,100 @@ def get_similarity_matrix_fig(
 
     for pattern in pattern_list:
         pass
+
+
+def get_pattern_durations_in_sequence(
+    sequence: list[int] | np.ndarray,
+    pattern: list[int] | np.ndarray,
+    durations: np.ndarray,
+    max_gap: int,
+) -> list[int]:
+
+    presence_array = get_pattern_presence_idx(sequence, pattern, max_gap)
+    duration_array = durations[presence_array].sum(axis=1)
+
+    return duration_array.tolist()
+
+
+def get_pattern_durations_in_mode(
+    dataset_subfolder_mode_path: str | Path,
+    pattern: list[int] | np.ndarray,
+    max_gap: int,
+) -> list[int]:
+
+    mode_path = Path(dataset_subfolder_mode_path)
+    pattern_durations = []
+
+    for file_path in sorted(mode_path.glob("*.csv")):
+        csv_df = pd.read_csv(file_path)
+        sequence = csv_df["syllable"].to_numpy()
+        durations = (
+            csv_df["duration"].to_numpy()
+            if "duration" in csv_df.columns
+            else np.ones_like(sequence)
+        )
+        pattern_durations += get_pattern_durations_in_sequence(
+            sequence, pattern, durations, max_gap
+        )
+
+    return pattern_durations
+
+
+def plot_pattern_temporal_syllable_repartition_in_sequence(
+    sequence: list[int] | np.ndarray,
+    pattern: list[int] | np.ndarray,
+    durations: np.ndarray,
+    max_gap: int,
+) -> None:
+    presence_array = get_pattern_presence_idx(sequence, pattern, max_gap)
+    duration_array = durations[presence_array]
+    n = len(pattern)
+    d = len(duration_array)
+
+    plt.figure()
+    plt.boxplot(duration_array, tick_labels=list(map(str, pattern)), showfliers=False)
+    for i in range(n):
+        plt.scatter(
+            np.random.normal(i + 1, 0.04, size=d),
+            duration_array[:, i],
+            alpha=0.4,
+        )
+    plt.xlabel("Syllable")
+    plt.ylabel("Duration (in frames)")
+    _ = plt.show()
+
+
+def plot_pattern_temporal_syllable_repartition_in_mode(
+    dataset_subfolder_mode_path: str | Path,
+    pattern: list[int] | np.ndarray,
+    max_gap: int,
+) -> None:
+
+    mode_path = Path(dataset_subfolder_mode_path)
+    n = len(pattern)
+    duration_array = np.empty((0, n), dtype=int)
+
+    for file_path in sorted(mode_path.glob("*.csv")):
+        csv_df = pd.read_csv(file_path)
+        sequence = csv_df["syllable"].to_numpy()
+        durations = (
+            csv_df["duration"].to_numpy()
+            if "duration" in csv_df.columns
+            else np.ones_like(sequence)
+        )
+        presence_array = get_pattern_presence_idx(sequence, pattern, max_gap)
+        duration_array = np.vstack((duration_array, durations[presence_array]))
+
+    d = len(duration_array)
+
+    plt.figure()
+    plt.boxplot(duration_array, tick_labels=list(map(str, pattern)), showfliers=False)
+    for i in range(n):
+        plt.scatter(
+            np.random.normal(i + 1, 0.04, size=d),
+            duration_array[:, i],
+            alpha=0.4,
+        )
+    plt.xlabel("Syllable")
+    plt.ylabel("Duration (in frames)")
+    _ = plt.show()
