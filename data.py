@@ -1,3 +1,5 @@
+import json
+import math
 from pathlib import Path
 
 import numpy as np
@@ -7,6 +9,7 @@ import pandas as pd
 def import_results_from_kmps(results_folder_path: str | Path) -> Path:
     """
     Imports and converts Keypoint-MoSeq results to a simpler version.
+    Files are renamed and two JSON files are created to switch between file names.
     """
 
     # Get Keypoint-MoSeq project details
@@ -16,13 +19,28 @@ def import_results_from_kmps(results_folder_path: str | Path) -> Path:
 
     # Create dataset folders
     dataset_path = Path.cwd() / "datasets" / f"{kpms_project_name}-{datetime}"
-    full_path = dataset_path / "original" / "standard"
+    full_path = dataset_path / "0" / "standard"
     full_path.mkdir(parents=True, exist_ok=True)
 
     # Convert and import results
-    for file_path in results_path.glob("*.csv"):
+    file_name_to_id = {}
+    id_to_file_name = {}
+    to_pad = math.ceil(math.log10(len(list(results_path.glob("*.csv"))) + 1))
+
+    for idx, file_path in enumerate(sorted(results_path.glob("*.csv"))):
+        file_name = file_path.name
+        idx_str = str(idx).zfill(to_pad)
+        file_name_to_id[file_name] = idx_str
+        id_to_file_name[idx_str] = file_name
+
         df = pd.read_csv(file_path).filter(["syllable"])
-        df.to_csv(full_path / file_path.name, index=False)
+        df.to_csv(full_path / f"{idx_str}.csv", index=False)
+
+    # Save dictionaries
+    with open(dataset_path / "file_name_to_id.json", "w") as file:
+        json.dump(file_name_to_id, file, indent=4)
+    with open(dataset_path / "id_to_file_name.json", "w") as file:
+        json.dump(id_to_file_name, file, indent=4)
 
     # Return dataset path for easier use
     return dataset_path
@@ -116,27 +134,32 @@ def spmf_output_to_dataframe(spmf_output_path: str | Path):
 
 def get_sequences(
     dataset_subfolder_mode_path: str | Path,
-) -> dict[str, np.ndarray]:
+) -> list[np.ndarray]:
     """
-    Returns a list of numpy arrays, on for each sequence of the given dataset,
-    subfolder, and mode.
+    Returns a list of numpy arrays, on for each sequence of the given mode.
+    The list is ordered following the import indexing.
     """
     mode_path = Path(dataset_subfolder_mode_path)
-    sequences = {}
+    sequences = []
     for file_path in sorted(mode_path.glob("*.csv")):
-        sequences[file_path] = pd.read_csv(file_path)["syllable"].to_numpy()
+        sequences.append(pd.read_csv(file_path)["syllable"].to_numpy())
     return sequences
 
 
 def get_durations(
     dataset_subfolder_mode_path: str | Path,
-) -> dict[str, np.ndarray]:
+) -> list[np.ndarray]:
     """
-    Returns a list of numpy arrays, on for each sequence of the given dataset,
-    subfolder, and mode.
+    Returns a list of numpy arrays, on for each sequence of the given mode.
+    The list is ordered following the import indexing.
     """
     mode_path = Path(dataset_subfolder_mode_path)
-    durations = {}
+    durations = []
     for file_path in sorted(mode_path.glob("*.csv")):
-        durations[file_path] = pd.read_csv(file_path)["duration"].to_numpy()
+        csv_df = pd.read_csv(file_path)
+        durations.append(
+            csv_df["duration"].to_numpy()
+            if "duration" in csv_df.columns
+            else np.ones(len(csv_df["syllable"])).astype(int)
+        )
     return durations

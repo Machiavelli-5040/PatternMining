@@ -80,9 +80,9 @@ def get_filtered_signal(
     """
 
     data_path = Path(dataset_path)
-    filtered_path = data_path / f"filtered_penalty_{penalty}" / "standard"
+    filtered_path = data_path / f"{penalty}" / "standard"
     filtered_path.mkdir(parents=True, exist_ok=True)
-    for file_path in (data_path / "original" / "standard").glob("*.csv"):
+    for file_path in (data_path / "0" / "standard").glob("*.csv"):
         df = pd.read_csv(file_path)
         symbols = df["syllable"].to_numpy()
         ohe = OneHotEncoder(dtype=np.float32).fit(symbols.reshape(-1, 1))
