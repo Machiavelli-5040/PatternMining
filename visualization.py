@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
-from analysis import get_all_patterns_coverage_in_sequence
 from matplotlib.colors import rgb2hex
+from pattern_analysis import get_all_patterns_coverage_in_sequence
 
 
 def get_syllable_sequence_fig(

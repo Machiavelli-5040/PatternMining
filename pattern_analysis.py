@@ -53,12 +53,30 @@ def get_pattern_occurences_idx_in_sequence(
     return occurences_idx
 
 
-def get_pattern_presence_idx_in_all_sequences(
-    dataset_subfolder_mode_path: str | Path,
+def get_pattern_occurences_idx_in_all_sequences(
+    mode_path: str | Path,
     pattern: list[int] | np.ndarray,
     max_gap: int,
 ):
-    mode_path = Path(dataset_subfolder_mode_path)
+    mode_path = Path(mode_path)
+    presences = []
+
+    for idx, file_path in enumerate(sorted(mode_path.glob("*.csv"))):
+        csv_df = pd.read_csv(file_path)
+        sequence = csv_df["syllable"].to_numpy()
+        occurences = get_pattern_occurences_idx_in_sequence(sequence, pattern, max_gap)
+        if occurences.size > 0:
+            presences.append((idx, occurences))
+
+    return presences
+
+
+def get_pattern_presence_idx_in_all_sequences(
+    mode_path: str | Path,
+    pattern: list[int] | np.ndarray,
+    max_gap: int,
+):
+    mode_path = Path(mode_path)
     presences = []
 
     for file_path in sorted(mode_path.glob("*.csv")):
@@ -74,10 +92,10 @@ def get_pattern_presence_idx_in_all_sequences(
 
 
 # def get_frame_coverage_from_idx_lists(
-#     dataset_subfolder_mode_path: str | Path,
+#     mode_path: str | Path,
 #     presence_lists=list[np.ndarray],
 # ):
-#     mode_path = Path(dataset_subfolder_mode_path)
+#     mode_path = Path(mode_path)
 #     frames_covered, total_frames = 0, 0
 
 #     for idx, file_path in enumerate(sorted(mode_path.glob("*.csv"))):
@@ -96,11 +114,11 @@ def get_pattern_presence_idx_in_all_sequences(
 
 
 def get_pattern_presence_in_all_sequences(
-    dataset_subfolder_mode_path: str | Path,
+    mode_path: str | Path,
     pattern: list[int] | np.ndarray,
     max_gap: int,
 ):
-    mode_path = Path(dataset_subfolder_mode_path)
+    mode_path = Path(mode_path)
     frames_where_present = 0
     total_frames = 0
 
@@ -123,7 +141,7 @@ def get_pattern_presence_in_all_sequences(
 
 
 def get_most_represented_patterns(
-    dataset_subfolder_mode_path: str | Path,
+    mode_path: str | Path,
     pattern_file_path: str | Path,
     max_gap: int,
 ) -> pd.DataFrame:
@@ -137,7 +155,7 @@ def get_most_represented_patterns(
 
     for pattern in tqdm(pattern_list):
         frames, total = get_pattern_presence_in_all_sequences(
-            dataset_subfolder_mode_path, pattern, max_gap
+            mode_path, pattern, max_gap
         )
         presence_frames.append(frames)
         total_frames.append(total)
@@ -153,30 +171,32 @@ def get_most_represented_patterns(
     )
 
 
-# def get_all_patterns_coverage_in_sequence(
-#     sequence: list[int] | np.ndarray,
-#     pattern_list: list[list[int]] | np.ndarray,
-#     max_gap: int,
-# ) -> np.ndarray:
-#     coverage_idx = np.array([], dtype=int)
+def get_all_patterns_coverage_in_sequence(
+    sequence: list[int] | np.ndarray,
+    pattern_list: list[list[int]] | np.ndarray,
+    max_gap: int,
+) -> np.ndarray:
+    coverage_idx = np.array([], dtype=int)
 
-#     for pattern in pattern_list:
-#         coverage_idx = np.concat(
-#             (
-#                 coverage_idx,
-#                 np.unique(get_pattern_occurences_idx_in_sequence(sequence, pattern, max_gap)),
-#             )
-#         )
+    for pattern in pattern_list:
+        coverage_idx = np.concat(
+            (
+                coverage_idx,
+                np.unique(
+                    get_pattern_occurences_idx_in_sequence(sequence, pattern, max_gap)
+                ),
+            )
+        )
 
-#     return np.sort(np.unique(coverage_idx))
+    return np.sort(np.unique(coverage_idx))
 
 
 # def get_sequence_coverage_data(
-#     dataset_subfolder_mode_path: str | Path,
+#     mode_path: str | Path,
 #     pattern_file_path: str | Path,
 #     max_gap: int,
 # ):
-#     mode_path = Path(dataset_subfolder_mode_path)
+#     mode_path = Path(mode_path)
 #     result = {}
 
 #     pattern_list = list(
@@ -218,12 +238,12 @@ def get_pattern_durations_in_sequence(
 
 
 def get_pattern_durations_in_mode(
-    dataset_subfolder_mode_path: str | Path,
+    mode_path: str | Path,
     pattern: list[int] | np.ndarray,
     max_gap: int,
 ) -> list[int]:
 
-    mode_path = Path(dataset_subfolder_mode_path)
+    mode_path = Path(mode_path)
     pattern_durations = []
 
     for file_path in sorted(mode_path.glob("*.csv")):
@@ -266,12 +286,12 @@ def plot_pattern_temporal_syllable_repartition_in_sequence(
 
 
 def plot_pattern_temporal_syllable_repartition_in_mode(
-    dataset_subfolder_mode_path: str | Path,
+    mode_path: str | Path,
     pattern: list[int] | np.ndarray,
     max_gap: int,
 ) -> None:
 
-    mode_path = Path(dataset_subfolder_mode_path)
+    mode_path = Path(mode_path)
     n = len(pattern)
     duration_array = np.empty((0, n), dtype=int)
 

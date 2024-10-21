@@ -4,4 +4,4 @@ __pycache__/
 datasets/
 results/
 
-tests.ipynb
+*.ipynb
