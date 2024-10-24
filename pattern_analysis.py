@@ -272,13 +272,14 @@ def plot_pattern_temporal_syllable_repartition_in_sequence(
     d = len(duration_array)
 
     plt.figure()
-    plt.boxplot(duration_array, tick_labels=list(map(str, pattern)), showfliers=False)
+    plt.boxplot(duration_array, showfliers=False)
     for i in range(n):
         plt.scatter(
             np.random.normal(i + 1, 0.04, size=d),
             duration_array[:, i],
             alpha=0.4,
         )
+    plt.xticks(list(range(1, n + 1)), list(map(str, pattern)))
     plt.xlabel("Syllable")
     plt.ylabel("Duration (in frames)")
     _ = plt.show()
@@ -310,13 +311,14 @@ def plot_pattern_temporal_syllable_repartition_in_mode(
     d = len(duration_array)
 
     plt.figure()
-    plt.boxplot(duration_array, tick_labels=list(map(str, pattern)), showfliers=False)
+    plt.boxplot(duration_array, showfliers=False)
     for i in range(n):
         plt.scatter(
             np.random.normal(i + 1, 0.04, size=d),
             duration_array[:, i],
             alpha=0.4,
         )
+    plt.xticks(list(range(1, n + 1)), list(map(str, pattern)))
     plt.xlabel("Syllable")
     plt.ylabel("Duration (in frames)")
     _ = plt.show()

@@ -1,6 +1,8 @@
 from itertools import combinations
 from pathlib import Path
 
+import cv2
+import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -99,3 +101,99 @@ def get_sequence_coverage_fig(
     fig.update_traces(marker_color=color_seq[syllables])
     fig.update_xaxes(range=[0, sum(durations)])
     return fig
+
+
+def plot_syllable_durations_across_penalties(
+    syllable: int,
+    penalties: list[int],
+    dataset_path: str | Path,
+):
+    penalty_durations = []
+    n = len(penalties)
+
+    for pen in penalties:
+        pen_durations = []
+        mode_path = Path(dataset_path) / f"{pen}" / "compressed"
+
+        for file_path in sorted(mode_path.glob("*.csv")):
+            csv_df = pd.read_csv(file_path)
+            durations = csv_df[csv_df["syllable"] == syllable]["duration"].to_list()
+            pen_durations += durations
+
+        penalty_durations.append(pen_durations)
+
+    cmap = plt.get_cmap("gist_rainbow", n)
+    color_seq = np.array([rgb2hex(cmap(i)) for i in range(n)])
+
+    plt.figure()
+    plt.boxplot(penalty_durations, showfliers=False)
+    for i in range(n):
+        plt.scatter(
+            np.random.normal(i + 1, 0.04, size=len(penalty_durations[i])),
+            penalty_durations[i],
+            c=color_seq[i],
+            alpha=0.4,
+        )
+    plt.xticks(list(range(1, n + 1)), list(map(str, penalties)))
+    plt.xlabel("Penalty")
+    plt.ylabel("Duration (in frames)")
+    plt.title(f"Durations of syllable {syllable} across penalties")
+    _ = plt.show()
+
+
+def extract_gif(
+    video_path,
+    output_path,
+    start_frame,
+    duration,
+    penalties: list[int],
+    dataset_path,
+    sequence_idx,
+    syllable_descriptions: list[str],
+):
+    unknown_threshold = len(syllable_descriptions)
+    p = len(penalties)
+
+    sequences_list = []
+    file_name = list(sorted((dataset_path / "0/compressed").glob("*.csv")))[
+        sequence_idx
+    ].name
+    for pen in penalties:
+        sequences_list.append(
+            pd.read_csv(dataset_path / f"{pen}/standard/{file_name}")[
+                "syllable"
+            ].to_list()
+        )
+
+    cap = cv2.VideoCapture(video_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    img_list = []
+
+    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame - 1)
+    ret, frame = cap.read()
+    f = start_frame
+
+    while ret:
+        if f == start_frame + duration:
+            break
+        else:
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            for i in range(p):
+                syllable = sequences_list[i][f]
+                # Add text for the syllables before
+                frame_rgb = cv2.putText(
+                    frame_rgb,
+                    f"P{penalties[i]}|{syllable} ({syllable_descriptions[syllable] if syllable < unknown_threshold else "?"})",
+                    org=(5, 30 * (i + 1)),
+                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                    fontScale=1,
+                    thickness=2,
+                    color=(204, 0, 0),
+                )
+                img_list.append(frame_rgb)
+
+        ret, frame = cap.read()
+        f += 1
+
+    cap.release()
+    imageio.mimsave(output_path, img_list, fps=fps, loop=0)
