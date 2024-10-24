@@ -91,26 +91,26 @@ def get_pattern_presence_idx_in_all_sequences(
     return presences
 
 
-# def get_frame_coverage_from_idx_lists(
-#     mode_path: str | Path,
-#     presence_lists=list[np.ndarray],
-# ):
-#     mode_path = Path(mode_path)
-#     frames_covered, total_frames = 0, 0
+def get_frame_coverage_from_idx_lists(
+    mode_path: str | Path,
+    presence_lists: list[np.ndarray],
+):
+    mode_path = Path(mode_path)
+    frames_covered, total_frames = 0, 0
 
-#     for idx, file_path in enumerate(sorted(mode_path.glob("*.csv"))):
-#         csv_df = pd.read_csv(file_path)
-#         sequence = csv_df["syllable"].to_numpy()
-#         durations = (
-#             csv_df["duration"]
-#             if "duration" in csv_df.columns
-#             else np.ones_like(sequence)
-#         )
+    for idx, file_path in enumerate(sorted(mode_path.glob("*.csv"))):
+        csv_df = pd.read_csv(file_path)
+        sequence = csv_df["syllable"].to_numpy()
+        durations = (
+            csv_df["duration"]
+            if "duration" in csv_df.columns
+            else np.ones_like(sequence)
+        )
 
-#         frames_covered += sum(durations[presence_lists[idx]])
-#         total_frames += sum(durations)
+        frames_covered += sum(durations[presence_lists[idx]])
+        total_frames += sum(durations)
 
-#     return frames_covered, total_frames
+    return frames_covered, total_frames
 
 
 def get_pattern_presence_in_all_sequences(
@@ -149,9 +149,12 @@ def get_most_represented_patterns(
     total_frames = []
     percentage = []
 
-    pattern_list = list(
-        pd.read_csv(pattern_file_path, converters={"pattern": pd.eval})["pattern"]
-    )
+    pattern_list = [
+        arr.tolist()
+        for arr in pd.read_csv(pattern_file_path, converters={"pattern": pd.eval})[
+            "pattern"
+        ]
+    ]
 
     for pattern in tqdm(pattern_list):
         frames, total = get_pattern_presence_in_all_sequences(
@@ -179,7 +182,7 @@ def get_all_patterns_coverage_in_sequence(
     coverage_idx = np.array([], dtype=int)
 
     for pattern in pattern_list:
-        coverage_idx = np.concat(
+        coverage_idx = np.concatenate(
             (
                 coverage_idx,
                 np.unique(
@@ -191,37 +194,33 @@ def get_all_patterns_coverage_in_sequence(
     return np.sort(np.unique(coverage_idx))
 
 
-# def get_sequence_coverage_data(
-#     mode_path: str | Path,
-#     pattern_file_path: str | Path,
-#     max_gap: int,
-# ):
-#     mode_path = Path(mode_path)
-#     result = {}
+def get_sequence_coverage_data(
+    mode_path: str | Path,
+    pattern_file_path: str | Path,
+    max_gap: int,
+):
+    mode_path = Path(mode_path)
+    result = {}
 
-#     pattern_list = list(
-#         pd.read_csv(pattern_file_path, converters={"pattern": pd.eval})["pattern"]
-#     )
+    pattern_list = list(
+        pd.read_csv(pattern_file_path, converters={"pattern": pd.eval})["pattern"]
+    )
 
-#     for file_path in tqdm(sorted(mode_path.glob("*.csv"))):
-#         csv_df = pd.read_csv(file_path)
-#         sequence = csv_df["syllable"].to_numpy()
-#         durations = (
-#             csv_df["duration"]
-#             if "duration" in csv_df.columns
-#             else np.ones_like(sequence)
-#         )
-#         coverage_idx = get_all_patterns_coverage_in_sequence(
-#             sequence, pattern_list, max_gap
-#         )
+    for file_path in tqdm(sorted(mode_path.glob("*.csv"))):
+        csv_df = pd.read_csv(file_path)
+        sequence = csv_df["syllable"].to_numpy()
+        durations = (
+            csv_df["duration"]
+            if "duration" in csv_df.columns
+            else np.ones_like(sequence)
+        )
+        coverage_idx = get_all_patterns_coverage_in_sequence(
+            sequence, pattern_list, max_gap
+        )
 
-#         result[file_path.name] = [
-#             c := sum(durations[coverage_idx]),
-#             t := sum(durations),
-#             c / t,
-#         ]
+        result[file_path.name] = sum(durations[coverage_idx]), sum(durations)
 
-#     return result
+    return result
 
 
 def get_pattern_durations_in_sequence(
