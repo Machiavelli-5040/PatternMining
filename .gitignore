@@ -3,6 +3,5 @@ __pycache__/
 
 datasets/
 results/
-video_extracts/
 
 *.ipynb
