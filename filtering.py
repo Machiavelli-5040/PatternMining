@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -34,7 +34,11 @@ def get_best_previous_state_and_soc(
 
 
 @njit
-def get_state_sequence(costs: np.ndarray, penalty: float) -> np.ndarray:
+def get_state_sequence(
+    sorted_syllables: np.ndarray,
+    costs: np.ndarray,
+    penalty: float,
+) -> np.ndarray:
     """Return the optimal state sequence for a given cost array and penalty.
 
     Parameters:
@@ -64,7 +68,7 @@ def get_state_sequence(costs: np.ndarray, penalty: float) -> np.ndarray:
     state = np.argmin(soc_array[end])
     states = np.empty(n_samples, dtype=np.int32)
     while (state > -1) and (end > 0):
-        states[end - 1] = state
+        states[end - 1] = sorted_syllables[state]
         state = state_array[end, state]
         end -= 1
     return states
@@ -73,6 +77,7 @@ def get_state_sequence(costs: np.ndarray, penalty: float) -> np.ndarray:
 def get_filtered_signal(
     dataset_path: str | Path,
     penalty: int,
+    distance_matrix: Optional[np.ndarray] = None,
 ):
     """
     Returns ...
@@ -85,10 +90,19 @@ def get_filtered_signal(
     for file_path in (data_path / "0" / "standard").glob("*.csv"):
         df = pd.read_csv(file_path)
         symbols = df["syllable"].to_numpy()
-        ohe = OneHotEncoder(dtype=np.float32).fit(symbols.reshape(-1, 1))
-        signal = np.asarray(ohe.transform(symbols.reshape(-1, 1)).todense())
-        costs = 1 - signal
-        filtered_signal = get_state_sequence(costs=costs, penalty=penalty)
+        sorted_present_symbols = np.unique(symbols)
+
+        if distance_matrix is None:
+            ohe = OneHotEncoder(dtype=np.float32).fit(symbols.reshape(-1, 1))
+            signal = np.asarray(ohe.transform(symbols.reshape(-1, 1)).todense())
+            costs = 1 - signal
+        else:
+            dist_mat_present = distance_matrix[:, sorted_present_symbols]
+            costs = dist_mat_present[symbols]
+
+        filtered_signal = get_state_sequence(
+            sorted_syllables=sorted_present_symbols, costs=costs, penalty=penalty
+        )
         pd.DataFrame(filtered_signal, columns=["syllable"]).to_csv(
             filtered_path / file_path.name, index=False
         )

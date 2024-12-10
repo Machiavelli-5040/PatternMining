@@ -125,14 +125,15 @@ def plot_syllable_durations_across_penalties(
     cmap = plt.get_cmap("gist_rainbow", n)
     color_seq = np.array([rgb2hex(cmap(i)) for i in range(n)])
 
-    plt.figure()
+    plt.figure(figsize=(10, 10))
     plt.boxplot(penalty_durations, showfliers=False)
     for i in range(n):
         plt.scatter(
             np.random.normal(i + 1, 0.04, size=len(penalty_durations[i])),
             penalty_durations[i],
+            s=20,
             c=color_seq[i],
-            alpha=0.4,
+            alpha=0.5,
         )
     plt.xticks(list(range(1, n + 1)), list(map(str, penalties)))
     plt.xlabel("Penalty")
@@ -146,7 +147,7 @@ def extract_gif(
     output_path,
     start_frame,
     duration,
-    penalties: list[int],
+    penalties: list[int | str],
     dataset_path,
     sequence_idx,
     syllable_descriptions: list[str],

@@ -191,7 +191,7 @@ def get_all_patterns_coverage_in_sequence(
             )
         )
 
-    return np.sort(np.unique(coverage_idx))
+    return np.unique(coverage_idx)
 
 
 def get_sequence_coverage_data(
