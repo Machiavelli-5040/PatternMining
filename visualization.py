@@ -1,4 +1,3 @@
-from itertools import combinations
 from pathlib import Path
 
 import cv2
@@ -6,6 +5,7 @@ import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import plotly
 import plotly.express as px
 from matplotlib.colors import rgb2hex
 from pattern_analysis import get_all_patterns_coverage_in_sequence
@@ -16,13 +16,25 @@ def get_syllable_sequence_fig(
     unknown_threshold: int,
     nb_syllables: int,
     palette="gist_rainbow",
-):
+) -> plotly.graph_objs._figure.Figure:
     """
     Returns a Plotly figure of the syllable sequence. Syllables whose corresponding
-    ID is greater or equal to the `unknown_threshold` will be marked in gray.
+    ID is greater or equal than the `unknown_threshold` will be colored in gray. Works
+    with both standard and compressed formats but using the compressed one (with
+    durations) is recommended (less clutter on the sequence).
 
-    Works with both standard and compressed format but using the compressed one
-    (with durations) is recommended (less clutter on the sequence).
+    Arguments:
+    - `csv_path: str | Path` - Path to the csv containing the syllable sequence to plot.
+    - `unknown_threshold: int` - Threshold above which the syllables are plotted in
+    gray to avoid confusion between colors.
+    - `nb_syllables: int` - Maximal number of a syllable in the sequence.
+
+    Keyword arguments:
+    - `palette: str` - Optional, defaults to `"gist_rainbow"`. Matplotlib color palette
+    to use for the plot.
+
+    Returns:
+    - `plotly.graph_objs._figure.Figure` - Resukting plotly figure.
     """
 
     csv_df = pd.read_csv(csv_path)
@@ -59,13 +71,22 @@ def get_sequence_coverage_fig(
     csv_path: str | Path,
     pattern_file_path: str | Path,
     max_gap: int,
-):
+) -> plotly.graph_objs._figure.Figure:
     """
     Returns a Plotly figure of the syllable sequence. Syllables belonging to one
-    of the patterns of the pattern_list will be highlighted in blue.
+    of the patterns of the pattern_list will be highlighted in blue. Works with both
+    standard and compressed formats but using the compressed one (with durations) is
+    recommended (less clutter on the sequence).
 
-    Works with both standard and compressed format but using the compressed one
-    (with durations) is recommended (less clutter on the sequence).
+    Arguments:
+    - `csv_path: str | Path` - Path to the csv containing the syllable sequence.
+    - `pattern_file_path: str | Path` - Path to the file containing the patterns found
+    for the corresponding dataset.
+    - `max_gap: int` - Maximum distance (in frames) between two consecutive items of a
+    pattern.
+
+    Returns:
+    - `plotly.graph_objs._figure.Figure` - Resulting plotly figure.
     """
 
     csv_df = pd.read_csv(csv_path)
@@ -107,7 +128,16 @@ def plot_syllable_durations_across_penalties(
     syllable: int,
     penalties: list[int],
     dataset_path: str | Path,
-):
+) -> None:
+    """
+    Plots the durations of a given syllable for a dataset across several penalty values.
+
+    Arguments:
+    - `syllable: int` - Syllable index to plot.
+    - `penalties: list[int]` - List of penalty values to plot.
+    - `dataset_path: str | Path` - Path to the corresponding dataset folder.
+    """
+
     penalty_durations = []
     n = len(penalties)
 
@@ -143,15 +173,33 @@ def plot_syllable_durations_across_penalties(
 
 
 def extract_gif(
-    video_path,
-    output_path,
-    start_frame,
-    duration,
-    penalties: list[int | str],
-    dataset_path,
-    sequence_idx,
+    video_path: str | Path,
+    output_path: str | Path,
+    start_frame: int,
+    duration: int,
+    penalties: list[int],
+    dataset_path: str | Path,
+    sequence_idx: int,
     syllable_descriptions: list[str],
-):
+) -> None:
+    """
+        Extracts and saves a GIF file from a video. Text is added to visualize the
+    syllables.
+
+    Arguments:
+    - `video_path: str | Path` - Path to the video file.
+    - `output_path: str | Path` - Path to where the GIF will be saved.
+    - `start_frame: int` - Starting frame of the GIF in the video.
+    - `duration: int` - Number of frames to extract.
+    - `penalties: list[int]` - Penalty values to write on the GIF.
+    - `dataset_path: str | Path` - Path to the corresponding dataset folder.
+    - `sequence_idx: int` - Sequence index of the syllable sequence corresponding to the
+    video.
+    - `syllable_descriptions: list[str]` - Text descriptions to add. Syllables having a
+    greater index than the length of this argument will have `?` displayed instead.
+    """
+
+    dataset_path = Path(dataset_path)
     unknown_threshold = len(syllable_descriptions)
     p = len(penalties)
 
@@ -166,7 +214,7 @@ def extract_gif(
             ].to_list()
         )
 
-    cap = cv2.VideoCapture(video_path)
+    cap = cv2.VideoCapture(str(video_path))
     fps = cap.get(cv2.CAP_PROP_FPS)
     img_list = []
 

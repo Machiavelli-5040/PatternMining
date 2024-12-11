@@ -8,12 +8,24 @@ from tqdm import tqdm
 
 
 def get_total_syllable_frames_for_penalty(
-    mode_path: str | Path,  # compressed
-):
-    mode_path = Path(mode_path)
+    penalty_path: str | Path,
+) -> dict[int, int]:
+    """
+    Returns a dictionnary giving, for each syllable, the total number of frames where it
+    is present.
+
+    Arguments:
+    - `penalty_path: str | Path` - Path to the penalty folder.
+
+    Returns:
+    - `dict[int, int]` - Resulting dictionnary. Keys are the syllables, values the
+    total durations in frames.
+    """
+
+    penalty_path = Path(penalty_path)
     syllable_frames = {}
 
-    for file_path in sorted(mode_path.glob("*.csv")):
+    for file_path in sorted((penalty_path / "compressed").glob("*.csv")):
         csv_df = pd.read_csv(file_path)
         sequence = list(csv_df["syllable"])
         durations = list(csv_df["duration"])
@@ -28,12 +40,24 @@ def get_total_syllable_frames_for_penalty(
 
 
 def get_number_of_frame_occurences_for_penalty(
-    mode_path: str | Path,  # compressed
-):
-    mode_path = Path(mode_path)
+    penalty_path: str | Path,
+) -> dict[int, int]:
+    """
+    Returns a dictionnary giving, for each syllable, its total number of occurences
+    (ignoring their durations).
+
+    Arguments:
+    - `penalty_path: str | Path` - Path to the penalty folder.
+
+    Returns:
+    - `dict[int, int]` - Resulting dictionnary. Keys are the syllables, values the
+     corresponding numbers of occurences.
+    """
+
+    penalty_path = Path(penalty_path)
     syllable_occurences = {}
 
-    for file_path in sorted(mode_path.glob("*.csv")):
+    for file_path in sorted((penalty_path / "compressed").glob("*.csv")):
         csv_df = pd.read_csv(file_path)
         sequence = list(csv_df["syllable"])
 

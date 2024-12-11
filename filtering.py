@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -11,16 +11,18 @@ from sklearn.preprocessing import OneHotEncoder
 def get_best_previous_state_and_soc(
     soc_vec: np.ndarray, end_state: int, penalty: float
 ) -> Tuple[int, float]:
-    """Update the sum of costs (soc) and the best previous state given the end state and a penalty.
+    """
+    Updates the sum of costs (soc) and the best previous state given the end state and a penalty.
 
-    Parameters:
-    - soc_vec (np.ndarray): Vector of sums of costs (soc), shape (n_states,).
-    - end_state (int): The end state for which the update is performed.
-    - penalty (float): Penalty value for the update.
+    Arguments:
+    - `soc_vec: np.ndarray` - Vector of sums of costs (soc), shape `(n_states,)`.
+    - `end_state: int` - The end state for which the update is performed.
+    - `penalty: float` - Penalty value for the update.
 
     Returns:
-    - Tuple[int, float]: Tuple containing the best previous state and the updated sum of costs.
+    - `Tuple[int, float]` - Tuple containing the best previous state and the updated sum of costs.
     """
+
     n_states = soc_vec.shape[0]
     best_previous_state = end_state
     best_soc = soc_vec[best_previous_state]
@@ -39,15 +41,18 @@ def get_state_sequence(
     costs: np.ndarray,
     penalty: float,
 ) -> np.ndarray:
-    """Return the optimal state sequence for a given cost array and penalty.
+    """
+    Returns the optimal state sequence for a given cost array and penalty.
 
-    Parameters:
-    - costs (np.ndarray): Array of cost values, shape (n_samples, n_states).
-    - penalty (float): Penalty value.
+    Arguments:
+    - `sorted_syllables: np.ndarray` - Array of syllables present in the symbolic sequence, sorted (output of `np.unique` on the symbolic sequence).
+    - `costs: np.ndarray` - Array of cost values, shape `(n_samples, n_states)`.
+    - `penalty: float` - Penalty value.
 
     Returns:
-    - np.ndarray: Optimal state sequence, shape (n_samples,).
+    - `np.ndarray` - Optimal state sequence, shape `(n_samples,)`.
     """
+
     n_samples, n_states = costs.shape
     soc_array = np.empty((n_samples + 1, n_states), dtype=np.float64)
     state_array = np.empty((n_samples + 1, n_states), dtype=np.int32)
@@ -77,11 +82,19 @@ def get_state_sequence(
 def get_filtered_signal(
     dataset_path: str | Path,
     penalty: int,
-    distance_matrix: Optional[np.ndarray] = None,
-):
+    distance_matrix: np.ndarray | None = None,
+) -> None:
     """
-    Returns ...
-    Always starts from the standard version.
+    Creates and saves the optimal state sequence from a dataset. If no distance matrix
+    is provided, all distances between symbols are set to 1.
+
+    Arguments:
+    - `dataset_path: str | Path` - Path to the dataset.
+    - `penalty: int` - Penalty value.
+
+    Keyword arguments:
+    - `distance_matrix: np.ndarray | None` - Optional, defaults to `None`. Distance
+    matrix to use for the filtering.
     """
 
     data_path = Path(dataset_path)

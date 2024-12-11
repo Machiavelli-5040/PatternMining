@@ -9,7 +9,15 @@ import pandas as pd
 def import_results_from_kmps(results_folder_path: str | Path) -> Path:
     """
     Imports and converts Keypoint-MoSeq results to a simpler version.
-    Files are renamed and two JSON files are created to switch between file names.
+    Filenames are replaced with numbers and the corresponding file order is saved in a
+    JSON file called `file_name_order.json`.
+
+    Arguments:
+    - `results_folder_path: str | Path` - Path to the `results` folder of a
+    Keypoint-Moseq project.
+
+    Returns:
+    - `Path` - Path to the dataset created.
     """
 
     # Get Keypoint-MoSeq project details
@@ -32,18 +40,25 @@ def import_results_from_kmps(results_folder_path: str | Path) -> Path:
         df = pd.read_csv(file_path).filter(["syllable"])
         df.to_csv(full_path / f"{str(idx).zfill(to_pad)}.csv", index=False)
 
-    # Save dictionaries
+    # Save dictionary
     with open(dataset_path / "file_name_order.json", "w") as file:
         json.dump(file_name_order, file, indent=4)
 
-    # Return dataset path for easier use
+    # Return dataset path for other functions
     return dataset_path
 
 
 def create_compressed_data(dataset_path: str | Path, force_recompute: bool = False):
     """
-    Runs through all subfolders of a given dataset and creates compressed
+    Runs through all penalty subfolders of a given dataset and creates compressed
     versions for all of them, if they have not yet been created.
+
+    Arguments:
+    - `dataset_path: str | Path` - Path to the dataset folder.
+
+    Keyword arguments:
+    - `force_recompute: bool` - Optional, defaults to `False`. Whether or not to
+    recompute the files that have already been computed.
     """
 
     data_path = Path(dataset_path)
@@ -75,9 +90,16 @@ def create_compressed_data(dataset_path: str | Path, force_recompute: bool = Fal
 
 def convert_input_to_spmf(dataset_path: str | Path, force_recompute: bool = False):
     """
-    Runs through all subfolders of a given dataset and creates SPMF input files
-    for standrad and compressed modes (if they exist), if they have not yet been
+    Runs through all penalty subfolders of a given dataset and creates SPMF input files
+    for standard and compressed modes (if they exist), if they have not yet been
     created.
+
+    Arguments:
+    - `dataset_path: str | Path` - Path to the dataset folder.
+
+    Keyword arguments:
+    - `force_recompute: bool` - Optional, defaults to `False`. Whether or not to
+    recompute the SPMF input files that have already been computed.
     """
 
     data_path = Path(dataset_path)
@@ -105,6 +127,15 @@ def convert_input_to_spmf(dataset_path: str | Path, force_recompute: bool = Fals
 
 
 def spmf_output_to_dataframe(spmf_output_path: str | Path):
+    """
+    Parses an output file of an algorithm from the SPMF library into a pandas Dataframe
+    that is then saved in the same folder.
+
+    Arguments:
+    - `spmf_output_path: str | Path` - Path to the output file of the algorithm from the
+    SPMF library.
+    """
+
     spmf_path = Path(spmf_output_path)
     pattern_list, support_list, sequences_list = [], [], []
     with open(spmf_path, "r") as file:
@@ -124,42 +155,3 @@ def spmf_output_to_dataframe(spmf_output_path: str | Path):
         }
     )
     df.to_csv(spmf_path.with_suffix(".csv"), index=False, header=True)
-
-
-def get_frames(
-    dataset_subfolder_mode_path: str | Path,
-) -> list[np.ndarray]:
-    mode_path = Path(dataset_subfolder_mode_path)
-    frames = []
-    for file_path in sorted(mode_path.glob("*.csv")):
-        frames.append(pd.read_csv(file_path)["frame"].to_numpy())
-    return frames
-
-
-def get_sequences(
-    dataset_subfolder_mode_path: str | Path,
-) -> list[np.ndarray]:
-    """
-    Returns a list of numpy arrays, one for each sequence of the given mode.
-    The list is ordered following the import indexing.
-    """
-    mode_path = Path(dataset_subfolder_mode_path)
-    sequences = []
-    for file_path in sorted(mode_path.glob("*.csv")):
-        sequences.append(pd.read_csv(file_path)["syllable"].to_numpy())
-    return sequences
-
-
-def get_durations(
-    dataset_subfolder_mode_path: str | Path,
-) -> list[np.ndarray]:
-    mode_path = Path(dataset_subfolder_mode_path)
-    durations = []
-    for file_path in sorted(mode_path.glob("*.csv")):
-        csv_df = pd.read_csv(file_path)
-        durations.append(
-            csv_df["duration"].to_numpy()
-            if "duration" in csv_df.columns
-            else np.ones(len(csv_df["syllable"])).astype(int)
-        )
-    return durations
