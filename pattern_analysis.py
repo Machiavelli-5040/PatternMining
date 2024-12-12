@@ -1,5 +1,6 @@
 from itertools import combinations
 from pathlib import Path
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,8 +14,20 @@ def get_pattern_occurences_idx_in_sequence(
     max_gap: int,
 ) -> np.ndarray:
     """
-    Returns a 2D numpy array listing all sequence indices where the pattern has
-    been detected.
+    Returns a 2D numpy array listing all sequence indices where the pattern has been
+    detected.
+
+    Arguments:
+    - `sequence: list[int] | np.ndarray` - Array or list containing the syllable
+    sequence.
+    - `pattern: list[int] | np.ndarray` - Array or list containing the pattern.
+    - `max_gap: int` - Maximum distance (in frames) between two consecutive items of a
+    pattern.
+
+    Returns:
+    - `np.ndarray` - Array of indices where the pattern is present in the sequence
+    (indices can overlap). Shape `(N, len(pattern))` where N is the number of
+    occurences of the pattern in the sequence.
     """
 
     p = len(pattern)
@@ -57,7 +70,22 @@ def get_pattern_occurences_idx_in_all_sequences(
     mode_path: str | Path,
     pattern: list[int] | np.ndarray,
     max_gap: int,
-):
+) -> list[Tuple[int, np.ndarray]]:
+    """
+    Returns the result of get_pattern_occurences_idx_in_sequence for all sequences in a
+    mode folder, grouped in a list.
+
+    Arguments:
+    - `mode_path: str | Path` - Path to the corresponding mode folder.
+    - `pattern: list[int] | np.ndarray` - Array or list containing the pattern.
+    - `max_gap: int` - Maximum distance (in frames) between two consecutive items of a
+    pattern.
+
+    Returns:
+    - `list[Tuple[int, np.ndarray]]` - List of tuples with the indices of the sequences
+    and the results of get_pattern_occurences_idx_in_sequence.
+    """
+
     mode_path = Path(mode_path)
     presences = []
 
@@ -75,7 +103,22 @@ def get_pattern_presence_idx_in_all_sequences(
     mode_path: str | Path,
     pattern: list[int] | np.ndarray,
     max_gap: int,
-):
+) -> list[np.ndarray]:
+    """
+    Returns the indices of all frames (without duplicates) belonging to a pattern for
+    all sequences in a mode folder, grouped in a list.
+
+    Arguments:
+    - `mode_path: str | Path` - Path to the corresponding mode folder.
+    - `pattern: list[int] | np.ndarray` - Array or list containing the pattern.
+    - `max_gap: int` - Maximum distance (in frames) between two consecutive items of a
+    pattern.
+
+    Returns:
+    - `list[np.ndarray]` - List of arrays of unique indices of frames belonging to the
+    input pattern.
+    """
+
     mode_path = Path(mode_path)
     presences = []
 
@@ -94,7 +137,21 @@ def get_pattern_presence_idx_in_all_sequences(
 def get_frame_coverage_from_idx_lists(
     mode_path: str | Path,
     presence_lists: list[np.ndarray],
-):
+) -> Tuple[int, int]:
+    """
+    Returns to number of frames covered by a pattern for all sequences of a mode folder
+    and their total number of frames.
+
+    Arguments:
+    - `mode_path: str | Path` - Path to the corresponding mode folder.
+    - `presence_lists: list[np.ndarray]` - List of arrays containing the indices of
+    presence of a pattern in all sequences of the corresponding mode folder.
+
+    Returns:
+    - `Tuple[int, int]` - Total number of frames covered by a pattern and total number
+    of frames of all sequences.
+    """
+
     mode_path = Path(mode_path)
     frames_covered, total_frames = 0, 0
 
@@ -117,7 +174,22 @@ def get_pattern_presence_in_all_sequences(
     mode_path: str | Path,
     pattern: list[int] | np.ndarray,
     max_gap: int,
-):
+) -> Tuple[int, int]:
+    """
+    Returns information on the number of frames covered by a pattern in the sequences of
+    a mode folder.
+
+    Arguments:
+    - `mode_path: str | Path` - Path to the corresponding mode folder.
+    - `pattern: list[int] | np.ndarray` - Array or list containing the pattern.
+    - `max_gap: int` - Maximum distance (in frames) between two consecutive items of a
+    pattern.
+
+    Returns:
+    - `Tuple[int, int]` - Tuple with the total number of frames covered by `pattern` in
+    all sequences of the mode folder and the total number of frames of these sequences.
+    """
+
     mode_path = Path(mode_path)
     frames_where_present = 0
     total_frames = 0
@@ -145,6 +217,22 @@ def get_most_represented_patterns(
     pattern_file_path: str | Path,
     max_gap: int,
 ) -> pd.DataFrame:
+    """
+    Returns information on the amount of frames covered by the patterns for all
+    sequences of the mode folder.
+
+    Arguments:
+    - `mode_path: str | Path` - Path to the corresponding mode folder.
+    - `pattern_file_path: str | Path` - Path to the CSV file containing the patterns.
+    - `max_gap: int` - Maximum distance (in frames) between two consecutive items of a
+    pattern.
+
+    Returns:
+    - `pd.DataFrame` - Pandas DataFrame with columns `pattern` (which pattern), `frames`
+    (number of frames covered), `total` (total frames of all sequences in mode folder)
+    and `percentage` (percentage of frames covered by the pattern).
+    """
+
     presence_frames = []
     total_frames = []
     percentage = []
@@ -179,6 +267,21 @@ def get_all_patterns_coverage_in_sequence(
     pattern_list: list[list[int]] | np.ndarray,
     max_gap: int,
 ) -> np.ndarray:
+    """
+    Returns information of the proportion of frames covered by at least one pattern for
+    a syllable sequence.
+
+    Arguments:
+    - `sequence: list[int] | np.ndarray` - Iterable containing the sequence.
+    - `pattern_list: list[list[int]] | np.ndarray` - Iterable containing the patterns.
+    - `max_gap: int` - Maximum distance (in frames) between two consecutive items of a
+    pattern.
+
+    Returns:
+    - `np.ndarray` - Array containing the indices (without duplicates) of the frames
+    in `sequence` covered by at least one pattern of `pattern_list`.
+    """
+
     coverage_idx = np.array([], dtype=int)
 
     for pattern in pattern_list:
@@ -198,7 +301,23 @@ def get_sequence_coverage_data(
     mode_path: str | Path,
     pattern_file_path: str | Path,
     max_gap: int,
-):
+) -> dict[str, Tuple[int, int]]:
+    """
+    Returns information on the proportion of frames covered by at least one pattern for
+    each sequence of a mode folder.
+
+    Arguments:
+    - `mode_path: str | Path` - Path to the corresponding mode folder.
+    - `pattern_file_path: str | Path` - Path to the CSV file containing the patterns.
+    - `max_gap: int` - Maximum distance (in frames) between two consecutive items of a
+    pattern.
+
+    Returns:
+    - `dict[str, Tuple[int, int]]` - Dictionnary where the keys are the filenames of the
+    sequences and the values are tuples with the total number of frames covered by at
+    least one pattern in a sequence and the total number of frames in it.
+    """
+
     mode_path = Path(mode_path)
     result = {}
 
@@ -229,6 +348,22 @@ def get_pattern_durations_in_sequence(
     durations: np.ndarray,
     max_gap: int,
 ) -> list[int]:
+    """
+    Returns a list containing the total duration (in frames) of each occurence of a
+    pattern in a sequence.
+
+    Arguments:
+    - `sequence: list[int] | np.ndarray` - Iterable containing the sequence.
+    - `pattern: list[int] | np.ndarray` - Array or list containing the pattern.
+    - `durations: np.ndarray` - Array containing the durations of each syllable of the
+    sequence.
+    - `max_gap: int` - Maximum distance (in frames) between two consecutive items of a
+    pattern.
+
+    Returns:
+    - `list[int]` - List of durations (in frames) of all pattern occurences in the
+    sequence.
+    """
 
     presence_array = get_pattern_occurences_idx_in_sequence(sequence, pattern, max_gap)
     duration_array = durations[presence_array].sum(axis=1)
@@ -241,6 +376,20 @@ def get_pattern_durations_in_mode(
     pattern: list[int] | np.ndarray,
     max_gap: int,
 ) -> list[int]:
+    """
+    Returns a list containing the total duration (in frames) of each occurence of a
+    pattern in a mode folder.
+
+    Arguments:
+    - `mode_path: str | Path` - Path to the corresponding mode folder.
+    - `pattern: list[int] | np.ndarray` - Array or list containing the pattern.
+    - `max_gap: int` - Maximum distance (in frames) between two consecutive items of a
+    pattern.
+
+    Returns:
+    - `list[int]` - List of durations (in frames) of all pattern occurences in the mode
+    folder.
+    """
 
     mode_path = Path(mode_path)
     pattern_durations = []
@@ -266,6 +415,19 @@ def plot_pattern_temporal_syllable_repartition_in_sequence(
     durations: np.ndarray,
     max_gap: int,
 ) -> None:
+    """
+    Plots a boxplot of the duration (in frames) of the syllables of a pattern across
+    a sequence. One box per syllable.
+
+    Arguments:
+    - `sequence: list[int] | np.ndarray` - Iterable containing the sequence.
+    - `pattern: list[int] | np.ndarray` - Array or list containing the pattern.
+    - `durations: np.ndarray` - Array containing the durations of each syllable of the
+    sequence.
+    - `max_gap: int` - Maximum distance (in frames) between two consecutive items of a
+    pattern.
+    """
+
     presence_array = get_pattern_occurences_idx_in_sequence(sequence, pattern, max_gap)
     duration_array = durations[presence_array]
     n = len(pattern)
@@ -290,6 +452,16 @@ def plot_pattern_temporal_syllable_repartition_in_mode(
     pattern: list[int] | np.ndarray,
     max_gap: int,
 ) -> None:
+    """
+    Plots a boxplot of the duration (in frames) of the syllables of a pattern across
+    a mode folder. One box per syllable.
+
+    Arguments:
+    - `mode_path: str | Path` - Path to the corresponding mode folder.
+    - `pattern: list[int] | np.ndarray` - Array or list containing the pattern.
+    - `max_gap: int` - Maximum distance (in frames) between two consecutive items of a
+    pattern.
+    """
 
     mode_path = Path(mode_path)
     n = len(pattern)
